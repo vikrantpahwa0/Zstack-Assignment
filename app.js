@@ -1,0 +1,42 @@
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
+import fs from "fs";
+
+import db from "./database/index.js";
+import userRoutes from "./routes/users.routes.js";
+
+dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const app = express();
+
+app.use(cors());
+
+// Increase payload size limit BEFORE any routes
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+
+// Serve static files from "public" directory
+app.use(express.static(path.join(__dirname, "public")));
+
+app.use("/user", userRoutes);
+
+const PORT = process.env.PORT || 3000;
+
+db.sequelize
+  .authenticate()
+  .then(() => {
+    console.log("Database connected");
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.error("Database connection failed:", error.message);
+    process.exit(1);
+  });
